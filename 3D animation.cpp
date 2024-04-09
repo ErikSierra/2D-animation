@@ -1,0 +1,268 @@
+#include <GLFW/glfw3.h>
+#include <cmath>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+#define PI 3.14159265358979323846
+
+struct Block {
+    float x, y; // Center position
+    float width, height; // Dimensions
+    bool visible; // Visibility of the block
+    std::vector<float> color; // Color of the block
+
+    // Constructor to initialize a block with random color
+    Block() : x(0), y(0), width(0.2f), height(0.1f), visible(true), color(3) {
+        // Generates a random color for the block
+        color[0] = static_cast<float>(rand()) / RAND_MAX; // Red
+        color[1] = static_cast<float>(rand()) / RAND_MAX; // Green
+        color[2] = static_cast<float>(rand()) / RAND_MAX; // Blue
+    }
+};
+
+struct Circle {
+    float x, y; // Position
+    float dx, dy; // Velocity
+    float radius; // Radius
+    std::vector<float> color; // Color
+
+    Circle(float posX = 0, float posY = 0, float velX = 0, float velY = 0, float rad = 0.05f) :
+        x(posX), y(posY), dx(velX), dy(velY), radius(rad), color({ 1.0f, 1.0f, 1.0f }) {
+
+    }
+
+    // This method is to combine this circle with another circle
+    void combineWith(const Circle& other) {
+        this->radius += other.radius;
+    }
+};
+
+bool checkCollisionsWithBlocks(float circleX, float circleY, float radius, std::vector<float>& ballColor, float& dx, float& dy);
+
+std::vector<Block> blocks;
+std::vector<Circle> circles; // Manage multiple circles
+
+void initializeBlocks() {
+    blocks.clear(); // Clear existing blocks if any
+    for (int i = 0; i < 3; ++i) { // Create 3 blocks
+        Block newBlock;
+        newBlock.x = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.8)) - 0.9f; // Random x position
+        newBlock.y = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.8)) - 0.9f; // Random y position
+        // The constructor initializes width, height, visibility, and color
+        blocks.push_back(newBlock);
+    }
+}
+
+void initializeCircles() {
+    circles.clear();
+    srand(static_cast<unsigned int>(time(nullptr)));
+
+    // Circle 1: Bottom-left corner
+    float dx1 = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX;
+    float dy1 = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX;
+    circles.push_back(Circle(-0.9f, -0.9f, dx1, dy1, 0.05f));
+
+    // Circle 2: Top-right corner
+    float dx2 = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX;
+    float dy2 = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX;
+    circles.push_back(Circle(0.9f, 0.9f, dx2, dy2, 0.05f));
+
+    // Circle 3: Bottom-right corner
+    float dx3 = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX;
+    float dy3 = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX;
+    circles.push_back(Circle(0.9f, -0.9f, dx3, dy3, 0.05f));
+}
+
+
+void checkAndCombineCircles() {
+    for (auto it1 = circles.begin(); it1 != circles.end(); ++it1) {
+        for (auto it2 = it1 + 1; it2 != circles.end();) {
+            float distX = it1->x - it2->x;
+            float distY = it1->y - it2->y;
+            float distance = sqrt(distX * distX + distY * distY);
+            if (distance < (it1->radius + it2->radius)) { // Collision detected
+                it1->combineWith(*it2);
+                it2 = circles.erase(it2); // Removes the second circle
+            }
+            else {
+                ++it2;
+            }
+        }
+    }
+}
+
+
+void drawCircle(const Circle& circle) {
+    glColor3f(circle.color[0], circle.color[1], circle.color[2]);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(circle.x, circle.y);
+    for (int i = 0; i <= 32; i++) {
+        float theta = 2.0f * PI * float(i) / float(32);
+        float x = circle.radius * cosf(theta);
+        float y = circle.radius * sinf(theta);
+        glVertex2f(x + circle.x, y + circle.y);
+    }
+    glEnd();
+}
+
+
+
+void drawBlocks() {
+    for (auto& block : blocks) {
+        if (!block.visible) continue;
+
+        // Use block's color
+        glColor3f(block.color[0], block.color[1], block.color[2]);
+        glBegin(GL_QUADS);
+        glVertex2f(block.x - block.width / 2, block.y - block.height / 2);
+        glVertex2f(block.x + block.width / 2, block.y - block.height / 2);
+        glVertex2f(block.x + block.width / 2, block.y + block.height / 2);
+        glVertex2f(block.x - block.width / 2, block.y + block.height / 2);
+        glEnd();
+    }
+}
+
+void updateAndDrawCircles() {
+    for (size_t i = 0; i < circles.size(); ++i) {
+        auto& circle = circles[i];
+
+        // Update circle position
+        circle.x += circle.dx;
+        circle.y += circle.dy;
+
+        // Boundary collision
+        if (circle.x + circle.radius > 1.0f || circle.x - circle.radius < -1.0f) circle.dx = -circle.dx;
+        if (circle.y + circle.radius > 1.0f || circle.y - circle.radius < -1.0f) circle.dy = -circle.dy;
+
+        // Check collision with blocks/bounce off
+        checkCollisionsWithBlocks(circle.x, circle.y, circle.radius, circle.color, circle.dx, circle.dy);
+
+        // Draw circle
+        drawCircle(circle);
+    }
+
+    // Check for collisions between balls/combine them
+    for (size_t i = 0; i < circles.size(); ++i) {
+        for (size_t j = i + 1; j < circles.size(); ++j) {
+            auto& circle1 = circles[i];
+            auto& circle2 = circles[j];
+
+            float dx = circle1.x - circle2.x;
+            float dy = circle1.y - circle2.y;
+            float distance = sqrt(dx * dx + dy * dy);
+
+            if (distance < (circle1.radius + circle2.radius)) {
+                circle1.combineWith(circle2);
+                circles.erase(circles.begin() + j);
+                --j; 
+            }
+        }
+    }
+}
+
+
+bool checkCollisionsWithBlocks(float circleX, float circleY, float radius, std::vector<float>& ballColor, float& dx, float& dy) {
+    bool collided = false;
+    for (auto& block : blocks) {
+        if (!block.visible) continue;
+
+        float closestX = std::max(block.x - block.width / 2, std::min(circleX, block.x + block.width / 2));
+        float closestY = std::max(block.y - block.height / 2, std::min(circleY, block.y + block.height / 2));
+
+        float distanceX = circleX - closestX;
+        float distanceY = circleY - closestY;
+
+        if ((distanceX * distanceX + distanceY * distanceY) < (radius * radius)) {
+            if (std::abs(circleX - block.x) < block.width / 2) {
+                dy = -dy;
+            }
+            if (std::abs(circleY - block.y) < block.height / 2) {
+                dx = -dx;
+            }
+
+            // Changes ball color randomly
+            ballColor[0] = static_cast<float>(rand()) / RAND_MAX;
+            ballColor[1] = static_cast<float>(rand()) / RAND_MAX;
+            ballColor[2] = static_cast<float>(rand()) / RAND_MAX;
+
+            // Makes the block disappear and reposition
+            block.visible = false;
+            collided = true;
+
+            // Reposition and show the block again after a brief "invisible" moment
+            block.x = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.8)) - 0.9f; // Random x position
+            block.y = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.8)) - 0.9f; // Random y position
+
+            // Randomly change block's color
+            block.color[0] = static_cast<float>(rand()) / RAND_MAX;
+            block.color[1] = static_cast<float>(rand()) / RAND_MAX;
+            block.color[2] = static_cast<float>(rand()) / RAND_MAX;
+
+            block.visible = true; // Make the block visible again
+        }
+    }
+    return collided;
+}
+
+
+
+int main() {
+    if (!glfwInit()) return -1;
+
+    GLFWwindow* window = glfwCreateWindow(640, 480, "3D animation - Erik Sierra", nullptr, nullptr);
+    if (!window) {
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+    srand(static_cast<unsigned int>(time(nullptr)));
+
+    // Initialize blocks
+    initializeBlocks();
+    initializeCircles(); // Initialize circles
+
+    float ballX = 0.0f, ballY = 0.0f; // Ball's initial position
+    float dx = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX; // Initial horizontal velocity
+    float dy = 0.05f - 0.1f * static_cast<float>(rand()) / RAND_MAX; // Initial vertical velocity
+    float radius = 0.05f; // Ball radius
+    std::vector<float> ballColor = { 1.0f, 1.0f, 1.0f }; //color white
+
+    while (!glfwWindowShouldClose(window)) {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Update ball position
+        ballX += dx;
+        ballY += dy;
+
+        // Boundary collision
+        if (ballX + radius > 1.0f || ballX - radius < -1.0f) dx = -dx;
+        if (ballY + radius > 1.0f || ballY - radius < -1.0f) dy = -dy;
+
+        // Check collision with blocks/bounce off
+        checkCollisionsWithBlocks(ballX, ballY, radius, ballColor, dx, dy);
+
+        Circle tempCircle;
+        tempCircle.x = ballX;
+        tempCircle.y = ballY;
+        tempCircle.radius = radius;
+        tempCircle.color = ballColor;
+
+        drawCircle(tempCircle);
+
+        updateAndDrawCircles(); // Update position, check collisions, and draw circles
+
+        // Draw blocks
+        drawBlocks();
+        checkAndCombineCircles(); // Check for circle collisions and combine them
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+
+
+    glfwTerminate();
+    return 0;
+}
