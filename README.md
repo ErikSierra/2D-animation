@@ -1,17 +1,22 @@
-This project was created for my SNHU 3D Graphic Design class in college using OpenGL in the C++ coding language
+# SNHU 3D Graphic Design Project
 
-Description:
-When initiated, colored circles will bounce around the window colliding with each other and the floating blocks. When a circle collides with another circle, they combine into a larger circle. If a circle collides with a floating block, the circle will bounce off and the block will disappear and appear in a new position in the window. 
+## Overview
+This project was developed for my 3D Graphic Design class at Southern New Hampshire University. It utilizes OpenGL and C++ to create an interactive animation where colored circles bounce around the window. 
 
-Instructions:
-1. Download zip folder
-2. Extract in file explorer (or similar)
-3. Open .sln file and run in IDE (visual studio or similar)
+## Description
+Upon initiation, colored circles bounce around the screen, colliding with each other and floating blocks:
+- **Circle Interaction:** When two circles collide, they combine to form a larger circle.
+- **Block Interaction:** When a circle hits a floating block, the circle bounces off, and the block disappears, reappearing at another position within the window.
 
-![Description of GIF](https://i.imgur.com/wwc8j2k.gif)
+## Demonstration
+![demo](https://i.imgur.com/wwc8j2k.gif)
+*Animated demonstration of circle and block interactions.*
 
+## Installation Instructions
+To set up and run this project on your local machine, follow these steps:
+1. **Download the zip folder**: Download the project zip folder to your local machine.
+2. **Extract the files**: Use File Explorer (Windows) or a similar tool on other operating systems to extract the files.
+3. **Open the project**: Locate the `.sln` file within the extracted files and open it using an IDE that supports C++ and OpenGL, such as Visual Studio.
+4. **Run the project**: Compile and run the project in your IDE to see the animation in action.
 
-
-![Screenshot 2024-04-09 145522](https://github.com/ErikSierra/2D-animation/assets/120680439/4509d256-fe16-4a51-94ab-56eee48bf8e4)
-![Screenshot 2024-04-09 145532](https://github.com/ErikSierra/2D-animation/assets/120680439/97c83405-e5b5-49e2-9534-7f375dfdd3f6)
 
