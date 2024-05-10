@@ -8,7 +8,7 @@ Instructions:
 2. Extract in file explorer (or similar)
 3. Open .sln file and run in IDE (visual studio or similar)
 
-![Example GIF]([https://i.imgur.com/example.gif](https://imgur.com/a/EFYFAhA))
+![Example GIF]([https://i.imgur.com/example.gif](https://imgur.com/a/EFYFAhA.gif))
 
 
 ![Screenshot 2024-04-09 145522](https://github.com/ErikSierra/2D-animation/assets/120680439/4509d256-fe16-4a51-94ab-56eee48bf8e4)
